@@ -1,7 +1,17 @@
-import { useState } from "react";
+import {
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactElement,
+} from "react";
+import { useNavigate } from "react-router-dom";
+import { ApiClientError } from "../../../lib/api-error";
+import { useAuth } from "../hooks/useAuth";
+import { register as registerUser } from "../services/auth.service";
 
 /**
- * Login.jsx
+ * AuthPage.tsx
  * Plataforma de conexión para buscar/ofrecer habitación.
  *
  * Paleta:
@@ -18,27 +28,152 @@ import { useState } from "react";
  * y en tailwind.config.js: fontFamily: { sans: ['Sora', 'sans-serif'] }
  */
 
-export default function Login() {
-  const [mode, setMode] = useState("login"); // "login" | "register"
-  const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+type AuthMode = "login" | "register";
+
+interface AuthFormState {
+  fullName: string;
+  email: string;
+  password: string;
+}
+
+type AuthFormField = keyof AuthFormState;
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_FULL_NAME_LENGTH = 3;
+const MIN_REGISTER_PASSWORD_LENGTH = 8;
+
+const isAuthFormField = (name: string): name is AuthFormField =>
+  name === "fullName" || name === "email" || name === "password";
+
+export default function AuthPage(): ReactElement {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const [mode, setMode] = useState<AuthMode>("login");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [form, setForm] = useState<AuthFormState>({
+    fullName: "",
+    email: "",
+    password: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const submittingRef = useRef<boolean>(false);
 
   const isRegister = mode === "register";
 
-  const handleChange = (e) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
+    if (!isAuthFormField(name)) return;
     setForm((prev) => ({ ...prev, [name]: value }));
+    if (errorMessage) {
+      setErrorMessage(null);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleToggleMode = (): void => {
+    if (isSubmitting) return;
+    setErrorMessage(null);
+    if (!isRegister) {
+      setSuccessMessage(null);
+    }
+    setMode(isRegister ? "login" : "register");
+  };
+
+  const validateForm = (): string | null => {
+    const trimmedEmail = form.email.trim();
+    const trimmedFullName = form.fullName.trim();
+
+    if (isRegister) {
+      if (trimmedFullName.length < MIN_FULL_NAME_LENGTH) {
+        return "El nombre completo debe contener al menos 3 caracteres.";
+      }
+    }
+
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      return "Formato de correo electrónico inválido.";
+    }
+
+    if (form.password.length === 0) {
+      return "La contraseña es obligatoria.";
+    }
+
+    if (isRegister && form.password.length < MIN_REGISTER_PASSWORD_LENGTH) {
+      return "La contraseña debe contener al menos 8 caracteres.";
+    }
+
+    return null;
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    // Conecta aquí tu lógica de autenticación (API, Supabase, Firebase, etc.)
-    console.log(isRegister ? "Registrar" : "Iniciar sesión", form);
+
+    if (submittingRef.current || isSubmitting) {
+      return;
+    }
+
+    const validationError = validateForm();
+    if (validationError) {
+      setErrorMessage(validationError);
+      setSuccessMessage(null);
+      return;
+    }
+
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      const trimmedEmail = form.email.trim();
+
+      if (isRegister) {
+        const response = await registerUser({
+          fullName: form.fullName.trim(),
+          email: trimmedEmail,
+          password: form.password,
+        });
+
+        setSuccessMessage(
+          response.message ??
+            "Cuenta creada exitosamente. Inicia sesión para continuar.",
+        );
+        setForm({
+          fullName: "",
+          email: trimmedEmail,
+          password: "",
+        });
+        setShowPassword(false);
+        setMode("login");
+      } else {
+        await login({
+          email: trimmedEmail,
+          password: form.password,
+        });
+
+        navigate("/app", { replace: true });
+      }
+    } catch (error: unknown) {
+      if (error instanceof ApiClientError) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage(
+          isRegister
+            ? "No se pudo completar el registro. Intenta nuevamente."
+            : "No se pudo iniciar sesión. Intenta nuevamente.",
+        );
+      }
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
   };
 
-  const handleGoogle = () => {
-    // Conecta aquí tu flujo OAuth de Google
-    console.log("Iniciar sesión con Google");
+  const handleGoogle = (): void => {
+    if (isSubmitting) return;
+    setErrorMessage("El inicio de sesión con Google aún no está disponible.");
   };
 
   return (
@@ -114,24 +249,45 @@ export default function Login() {
               : "Ingresa para ver tus conversaciones y búsquedas guardadas."}
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          {successMessage && (
+            <div
+              role="status"
+              className="mt-6 rounded-lg border border-[#1F2A2E]/20 bg-[#1F2A2E]/5 px-3.5 py-2.5 text-xs text-[#1F2A2E]"
+            >
+              {successMessage}
+            </div>
+          )}
+
+          {errorMessage && (
+            <div
+              role="alert"
+              className="mt-6 rounded-lg border border-[#C17A4D]/40 bg-[#C17A4D]/10 px-3.5 py-2.5 text-xs text-[#8C4D27]"
+            >
+              {errorMessage}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="mt-8 space-y-4" noValidate>
             {isRegister && (
               <div>
                 <label
-                  htmlFor="name"
+                  htmlFor="fullName"
                   className="block text-xs font-medium text-[#1C2321] mb-1.5"
                 >
                   Nombre
                 </label>
                 <input
-                  id="name"
-                  name="name"
+                  id="fullName"
+                  name="fullName"
                   type="text"
-                  value={form.name}
+                  value={form.fullName}
                   onChange={handleChange}
                   placeholder="Tu nombre completo"
-                  className="w-full rounded-lg border border-[#E7E2D6] bg-white px-3.5 py-2.5 text-sm text-[#1C2321] placeholder:text-[#A8A296] outline-none transition focus:border-[#C17A4D] focus:ring-2 focus:ring-[#C17A4D]/20"
+                  className="w-full rounded-lg border border-[#E7E2D6] bg-white px-3.5 py-2.5 text-sm text-[#1C2321] placeholder:text-[#A8A296] outline-none transition focus:border-[#C17A4D] focus:ring-2 focus:ring-[#C17A4D]/20 disabled:opacity-60"
                   required
+                  minLength={MIN_FULL_NAME_LENGTH}
+                  disabled={isSubmitting}
+                  autoComplete="name"
                 />
               </div>
             )}
@@ -150,8 +306,10 @@ export default function Login() {
                 value={form.email}
                 onChange={handleChange}
                 placeholder="tucorreo@ejemplo.com"
-                className="w-full rounded-lg border border-[#E7E2D6] bg-white px-3.5 py-2.5 text-sm text-[#1C2321] placeholder:text-[#A8A296] outline-none transition focus:border-[#C17A4D] focus:ring-2 focus:ring-[#C17A4D]/20"
+                className="w-full rounded-lg border border-[#E7E2D6] bg-white px-3.5 py-2.5 text-sm text-[#1C2321] placeholder:text-[#A8A296] outline-none transition focus:border-[#C17A4D] focus:ring-2 focus:ring-[#C17A4D]/20 disabled:opacity-60"
                 required
+                disabled={isSubmitting}
+                autoComplete="email"
               />
             </div>
 
@@ -166,7 +324,8 @@ export default function Login() {
                 {!isRegister && (
                   <button
                     type="button"
-                    className="text-xs text-[#C17A4D] hover:text-[#A6613A] transition"
+                    disabled={isSubmitting}
+                    className="text-xs text-[#C17A4D] hover:text-[#A6613A] transition disabled:opacity-60"
                   >
                     ¿La olvidaste?
                   </button>
@@ -180,14 +339,21 @@ export default function Login() {
                   value={form.password}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className="w-full rounded-lg border border-[#E7E2D6] bg-white px-3.5 py-2.5 pr-10 text-sm text-[#1C2321] placeholder:text-[#A8A296] outline-none transition focus:border-[#C17A4D] focus:ring-2 focus:ring-[#C17A4D]/20"
+                  className="w-full rounded-lg border border-[#E7E2D6] bg-white px-3.5 py-2.5 pr-10 text-sm text-[#1C2321] placeholder:text-[#A8A296] outline-none transition focus:border-[#C17A4D] focus:ring-2 focus:ring-[#C17A4D]/20 disabled:opacity-60"
                   required
-                  minLength={8}
+                  minLength={
+                    isRegister ? MIN_REGISTER_PASSWORD_LENGTH : undefined
+                  }
+                  disabled={isSubmitting}
+                  autoComplete={
+                    isRegister ? "new-password" : "current-password"
+                  }
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#74716A] hover:text-[#1C2321] transition"
+                  disabled={isSubmitting}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#74716A] hover:text-[#1C2321] transition disabled:opacity-60"
                   aria-label={
                     showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
                   }
@@ -200,9 +366,17 @@ export default function Login() {
             {/* Botón 1: acción primaria (cambia según el modo) */}
             <button
               type="submit"
-              className="w-full rounded-lg bg-[#C17A4D] py-2.5 text-sm font-medium text-white transition hover:bg-[#A6613A] focus:outline-none focus:ring-2 focus:ring-[#C17A4D]/40 focus:ring-offset-2"
+              disabled={isSubmitting}
+              aria-busy={isSubmitting}
+              className="w-full rounded-lg bg-[#C17A4D] py-2.5 text-sm font-medium text-white transition hover:bg-[#A6613A] focus:outline-none focus:ring-2 focus:ring-[#C17A4D]/40 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isRegister ? "Registrarse" : "Iniciar sesión"}
+              {isSubmitting
+                ? isRegister
+                  ? "Registrando..."
+                  : "Iniciando sesión..."
+                : isRegister
+                  ? "Registrarse"
+                  : "Iniciar sesión"}
             </button>
           </form>
 
@@ -216,7 +390,8 @@ export default function Login() {
           <button
             type="button"
             onClick={handleGoogle}
-            className="w-full flex items-center justify-center gap-2.5 rounded-lg border border-[#E7E2D6] bg-white py-2.5 text-sm font-medium text-[#1C2321] transition hover:border-[#1C2321]/25 hover:bg-[#FBF9F5] focus:outline-none focus:ring-2 focus:ring-[#C17A4D]/30"
+            disabled={isSubmitting}
+            className="w-full flex items-center justify-center gap-2.5 rounded-lg border border-[#E7E2D6] bg-white py-2.5 text-sm font-medium text-[#1C2321] transition hover:border-[#1C2321]/25 hover:bg-[#FBF9F5] focus:outline-none focus:ring-2 focus:ring-[#C17A4D]/30 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <GoogleIcon />
             Iniciar sesión con Google
@@ -227,8 +402,9 @@ export default function Login() {
             {isRegister ? "¿Ya tienes una cuenta?" : "¿Aún no tienes cuenta?"}{" "}
             <button
               type="button"
-              onClick={() => setMode(isRegister ? "login" : "register")}
-              className="font-medium text-[#C17A4D] hover:text-[#A6613A] transition"
+              onClick={handleToggleMode}
+              disabled={isSubmitting}
+              className="font-medium text-[#C17A4D] hover:text-[#A6613A] transition disabled:opacity-60"
             >
               {isRegister ? "Inicia sesión" : "Regístrate"}
             </button>
@@ -239,7 +415,7 @@ export default function Login() {
   );
 }
 
-function GoogleIcon() {
+function GoogleIcon(): ReactElement {
   return (
     <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
       <path
@@ -261,4 +437,3 @@ function GoogleIcon() {
     </svg>
   );
 }
-
