@@ -1,7 +1,12 @@
-import { useState } from "react";
+import {
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactElement,
+} from "react";
 
 /**
- * Login.jsx
+ * AuthPage.tsx
  * Plataforma de conexión para buscar/ofrecer habitación.
  *
  * Paleta:
@@ -18,25 +23,43 @@ import { useState } from "react";
  * y en tailwind.config.js: fontFamily: { sans: ['Sora', 'sans-serif'] }
  */
 
-export default function Login() {
-  const [mode, setMode] = useState("login"); // "login" | "register"
-  const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+type AuthMode = "login" | "register";
+
+interface AuthFormState {
+  name: string;
+  email: string;
+  password: string;
+}
+
+type AuthFormField = keyof AuthFormState;
+
+const isAuthFormField = (name: string): name is AuthFormField =>
+  name === "name" || name === "email" || name === "password";
+
+export default function AuthPage(): ReactElement {
+  const [mode, setMode] = useState<AuthMode>("login");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [form, setForm] = useState<AuthFormState>({
+    name: "",
+    email: "",
+    password: "",
+  });
 
   const isRegister = mode === "register";
 
-  const handleChange = (e) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
+    if (!isAuthFormField(name)) return;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     // Conecta aquí tu lógica de autenticación (API, Supabase, Firebase, etc.)
     console.log(isRegister ? "Registrar" : "Iniciar sesión", form);
   };
 
-  const handleGoogle = () => {
+  const handleGoogle = (): void => {
     // Conecta aquí tu flujo OAuth de Google
     console.log("Iniciar sesión con Google");
   };
@@ -239,7 +262,7 @@ export default function Login() {
   );
 }
 
-function GoogleIcon() {
+function GoogleIcon(): ReactElement {
   return (
     <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
       <path
