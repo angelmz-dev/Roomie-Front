@@ -3,6 +3,17 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import { useProfile } from "../features/profile/hooks/useProfile";
 
+interface NavItem {
+  to: string;
+  label: string;
+}
+
+// Prepared for future sections (Matches, Chat) without linking to non-existent routes
+const PRIMARY_NAV_ITEMS: readonly NavItem[] = [
+  { to: "/app/discovery", label: "Descubrir" },
+  { to: "/app/profile", label: "Mi perfil" },
+] as const;
+
 export default function AppLayout(): ReactElement {
   const { user, logout } = useAuth();
   const { profile, status } = useProfile();
@@ -37,12 +48,11 @@ export default function AppLayout(): ReactElement {
                 aria-label="Navegación principal"
                 className="flex items-center gap-1.5"
               >
-                <NavLink to="/app" end className={navLinkClass}>
-                  Inicio
-                </NavLink>
-                <NavLink to="/app/profile" className={navLinkClass}>
-                  Mi perfil
-                </NavLink>
+                {PRIMARY_NAV_ITEMS.map((item) => (
+                  <NavLink key={item.to} to={item.to} className={navLinkClass}>
+                    {item.label}
+                  </NavLink>
+                ))}
               </nav>
             )}
           </div>

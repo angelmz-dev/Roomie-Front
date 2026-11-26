@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import AuthPage from "../features/auth/pages/AuthPage";
-import PrivateHomePage from "../features/auth/pages/PrivateHomePage";
+import DiscoveryPage from "../features/discovery/pages/DiscoveryPage";
 import OnboardingPage from "../features/profile/pages/OnboardingPage";
 import ProfilePage from "../features/profile/pages/ProfilePage";
 import AppLayout from "../layouts/AppLayout";
@@ -22,7 +22,7 @@ function RootRedirect(): ReactElement {
     );
   }
 
-  return <Navigate to={isAuthenticated ? "/app" : "/auth"} replace />;
+  return <Navigate to={isAuthenticated ? "/app/discovery" : "/auth"} replace />;
 }
 
 export default function AppRouter(): ReactElement {
@@ -42,7 +42,8 @@ export default function AppRouter(): ReactElement {
             </Route>
 
             <Route element={<ProfileRequiredRoute />}>
-              <Route index element={<PrivateHomePage />} />
+              <Route index element={<Navigate to="/app/discovery" replace />} />
+              <Route path="discovery" element={<DiscoveryPage />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>
           </Route>
