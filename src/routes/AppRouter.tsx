@@ -3,7 +3,11 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import AuthPage from "../features/auth/pages/AuthPage";
 import PrivateHomePage from "../features/auth/pages/PrivateHomePage";
+import OnboardingPage from "../features/profile/pages/OnboardingPage";
+import ProfilePage from "../features/profile/pages/ProfilePage";
 import AppLayout from "../layouts/AppLayout";
+import OnboardingRoute from "./OnboardingRoute";
+import ProfileRequiredRoute from "./ProfileRequiredRoute";
 import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
 
@@ -33,7 +37,14 @@ export default function AppRouter(): ReactElement {
 
         <Route element={<ProtectedRoute />}>
           <Route path="/app" element={<AppLayout />}>
-            <Route index element={<PrivateHomePage />} />
+            <Route element={<OnboardingRoute />}>
+              <Route path="onboarding" element={<OnboardingPage />} />
+            </Route>
+
+            <Route element={<ProfileRequiredRoute />}>
+              <Route index element={<PrivateHomePage />} />
+              <Route path="profile" element={<ProfilePage />} />
+            </Route>
           </Route>
         </Route>
 
@@ -42,4 +53,3 @@ export default function AppRouter(): ReactElement {
     </BrowserRouter>
   );
 }
-
