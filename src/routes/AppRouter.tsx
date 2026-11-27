@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import AuthPage from "../features/auth/pages/AuthPage";
+import ChatPage from "../features/chat/pages/ChatPage";
 import DiscoveryPage from "../features/discovery/pages/DiscoveryPage";
 import MatchesPage from "../features/matches/pages/MatchesPage";
 import OnboardingPage from "../features/profile/pages/OnboardingPage";
@@ -46,6 +47,8 @@ export default function AppRouter(): ReactElement {
               <Route index element={<Navigate to="/app/discovery" replace />} />
               <Route path="discovery" element={<DiscoveryPage />} />
               <Route path="matches" element={<MatchesPage />} />
+              <Route path="chat" element={<ChatPage />} />
+              <Route path="chat/:matchId" element={<ChatPage />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>
           </Route>
