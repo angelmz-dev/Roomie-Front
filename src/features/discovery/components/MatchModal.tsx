@@ -20,11 +20,11 @@ export default function MatchModal({
   onContinue,
 }: MatchModalProps): ReactElement {
   const navigate = useNavigate();
-  const viewMatchesButtonRef = useRef<HTMLButtonElement | null>(null);
-  const { candidate } = matchEvent;
+  const sendMessageButtonRef = useRef<HTMLButtonElement | null>(null);
+  const { candidate, match } = matchEvent;
 
   useEffect(() => {
-    viewMatchesButtonRef.current?.focus();
+    sendMessageButtonRef.current?.focus();
 
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key === "Escape") {
@@ -37,6 +37,11 @@ export default function MatchModal({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [onContinue]);
+
+  const handleOpenChat = (): void => {
+    onContinue();
+    navigate(`/app/chat/${match.id}`);
+  };
 
   const handleViewMatches = (): void => {
     onContinue();
@@ -105,10 +110,18 @@ export default function MatchModal({
 
         <div className="mt-6 flex flex-col gap-2.5">
           <button
-            ref={viewMatchesButtonRef}
+            ref={sendMessageButtonRef}
+            type="button"
+            onClick={handleOpenChat}
+            className="w-full rounded-xl bg-[#C17A4D] py-2.5 text-sm font-medium text-white transition hover:bg-[#A6613A] focus:outline-none focus:ring-2 focus:ring-[#C17A4D]/40 focus:ring-offset-2"
+          >
+            Enviar mensaje
+          </button>
+
+          <button
             type="button"
             onClick={handleViewMatches}
-            className="w-full rounded-xl bg-[#C17A4D] py-2.5 text-sm font-medium text-white transition hover:bg-[#A6613A] focus:outline-none focus:ring-2 focus:ring-[#C17A4D]/40 focus:ring-offset-2"
+            className="w-full rounded-xl bg-[#1F2A2E] py-2.5 text-sm font-medium text-[#FBF9F5] transition hover:bg-[#1C2321] focus:outline-none focus:ring-2 focus:ring-[#1F2A2E]/40 focus:ring-offset-2"
           >
             Ver mis matches
           </button>

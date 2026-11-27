@@ -8,10 +8,10 @@ interface NavItem {
   label: string;
 }
 
-// Prepared for future Chat section without linking to non-existent routes
 const PRIMARY_NAV_ITEMS: readonly NavItem[] = [
   { to: "/app/discovery", label: "Descubrir" },
   { to: "/app/matches", label: "Matches" },
+  { to: "/app/chat", label: "Chat" },
   { to: "/app/profile", label: "Mi perfil" },
 ] as const;
 
@@ -36,7 +36,7 @@ export default function AppLayout(): ReactElement {
     <div className="min-h-screen w-full flex flex-col font-sans bg-[#FBF9F5] text-[#1C2321]">
       <header className="w-full bg-[#1F2A2E] text-[#FBF9F5] border-b border-[#E7E2D6]/15">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 sm:gap-6">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-full bg-[#C17A4D]" />
               <span className="text-base font-semibold tracking-tight">
@@ -47,7 +47,7 @@ export default function AppLayout(): ReactElement {
             {status === "ready" && (
               <nav
                 aria-label="Navegación principal"
-                className="flex items-center gap-1.5"
+                className="flex items-center gap-1 sm:gap-1.5"
               >
                 {PRIMARY_NAV_ITEMS.map((item) => (
                   <NavLink key={item.to} to={item.to} className={navLinkClass}>

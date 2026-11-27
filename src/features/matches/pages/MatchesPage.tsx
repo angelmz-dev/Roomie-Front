@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import { Link } from "react-router-dom";
 import MatchCard from "../components/MatchCard";
 import MatchesEmptyState from "../components/MatchesEmptyState";
 import { useMatches } from "../hooks/useMatches";
@@ -124,11 +125,21 @@ export default function MatchesPage(): ReactElement {
           className="grid grid-cols-1 md:grid-cols-2 gap-5"
         >
           {matches.map((match) => (
-            <MatchCard key={match.matchId} match={match} />
+            <MatchCard
+              key={match.matchId}
+              match={match}
+              actionSlot={
+                <Link
+                  to={`/app/chat/${match.matchId}`}
+                  className="block w-full text-center rounded-xl bg-[#C17A4D] py-2.5 text-sm font-medium text-white transition hover:bg-[#A6613A] focus:outline-none focus:ring-2 focus:ring-[#C17A4D]/40 focus:ring-offset-2"
+                >
+                  Abrir chat
+                </Link>
+              }
+            />
           ))}
         </section>
       )}
     </div>
   );
 }
-
