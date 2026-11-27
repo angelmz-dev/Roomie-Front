@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactElement } from "react";
+import { useNavigate } from "react-router-dom";
 import { formatCurrencyMxn } from "../../profile/utils/profile-validation";
 import type { MatchEvent } from "../types/discovery.types";
 
@@ -18,11 +19,12 @@ export default function MatchModal({
   matchEvent,
   onContinue,
 }: MatchModalProps): ReactElement {
-  const continueButtonRef = useRef<HTMLButtonElement | null>(null);
+  const navigate = useNavigate();
+  const viewMatchesButtonRef = useRef<HTMLButtonElement | null>(null);
   const { candidate } = matchEvent;
 
   useEffect(() => {
-    continueButtonRef.current?.focus();
+    viewMatchesButtonRef.current?.focus();
 
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key === "Escape") {
@@ -35,6 +37,11 @@ export default function MatchModal({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [onContinue]);
+
+  const handleViewMatches = (): void => {
+    onContinue();
+    navigate("/app/matches");
+  };
 
   return (
     <div
@@ -96,21 +103,25 @@ export default function MatchModal({
           </div>
         </div>
 
-        <p className="mt-4 text-xs text-[#74716A]">
-          La bandeja de Matches y el Chat estarán disponibles en los próximos
-          sprints.
-        </p>
+        <div className="mt-6 flex flex-col gap-2.5">
+          <button
+            ref={viewMatchesButtonRef}
+            type="button"
+            onClick={handleViewMatches}
+            className="w-full rounded-xl bg-[#C17A4D] py-2.5 text-sm font-medium text-white transition hover:bg-[#A6613A] focus:outline-none focus:ring-2 focus:ring-[#C17A4D]/40 focus:ring-offset-2"
+          >
+            Ver mis matches
+          </button>
 
-        <button
-          ref={continueButtonRef}
-          type="button"
-          onClick={onContinue}
-          className="mt-6 w-full rounded-xl bg-[#C17A4D] py-2.5 text-sm font-medium text-white transition hover:bg-[#A6613A] focus:outline-none focus:ring-2 focus:ring-[#C17A4D]/40 focus:ring-offset-2"
-        >
-          Seguir explorando
-        </button>
+          <button
+            type="button"
+            onClick={onContinue}
+            className="w-full rounded-xl border border-[#E7E2D6] bg-white py-2.5 text-sm font-medium text-[#1C2321] transition hover:border-[#1C2321]/25 hover:bg-[#FBF9F5] focus:outline-none focus:ring-2 focus:ring-[#C17A4D]/30"
+          >
+            Seguir explorando
+          </button>
+        </div>
       </div>
     </div>
   );
 }
-

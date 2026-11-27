@@ -8,9 +8,10 @@ interface NavItem {
   label: string;
 }
 
-// Prepared for future sections (Matches, Chat) without linking to non-existent routes
+// Prepared for future Chat section without linking to non-existent routes
 const PRIMARY_NAV_ITEMS: readonly NavItem[] = [
   { to: "/app/discovery", label: "Descubrir" },
+  { to: "/app/matches", label: "Matches" },
   { to: "/app/profile", label: "Mi perfil" },
 ] as const;
 
